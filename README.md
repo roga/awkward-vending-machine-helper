@@ -1,3 +1,8 @@
+# url
+
+- https://food.roga.tw/
+- iPhone 使用 Safari 開啟後按「分享」選擇「加入主畫面」即可新增本網站為桌面圖示
+
 # awkward-vending-machine-helper
 
 - 在本地端 (Web Storage) 儲存零食序號，且支援修改
