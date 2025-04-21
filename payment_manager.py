@@ -6,12 +6,11 @@ class PaymentManager:
     def __init__(self, personal_code):
         self.personal_code = personal_code
 
-        # 讀取環境變數
-        self._api_get_balance_url = os.environ.get('YALLVEND_API_BALANCE_URL', 'https://pay.yallvend.com/app/point_check/point_check_api')
-        self._api_product_price_url = os.environ.get('YALLVEND_API_PRODUCT_PRICE_URL', 'https://pay.yallvend.com/epay/model/payment_api')
-        self._api_payment_url = os.environ.get('YALLVEND_API_PAYMENT_URL', 'https://pay.yallvend.com/epay/staff/staff.php')
+        self._api_get_balance_url = os.environ.get('YALLVEND_API_BALANCE_URL')
+        self._api_product_price_url = os.environ.get('YALLVEND_API_PRODUCT_PRICE_URL')
+        self._api_payment_url = os.environ.get('YALLVEND_API_PAYMENT_URL')
         self._api_get_balance_referer = os.environ.get('YALLVEND_REFERER_BALANCE')
-        self._api_payment_referer_base = os.environ.get('YALLVEND_REFERER_PAYMENT_BASE', 'https://pay.yallvend.com/machineid/')
+        self._api_payment_referer_base = os.environ.get('YALLVEND_REFERER_PAYMENT_BASE')
 
         self._api_key_balance = os.environ.get('YALLVEND_API_KEY')
         self._api_key_price = os.environ.get('YALLVEND_PRICE_KEY')
