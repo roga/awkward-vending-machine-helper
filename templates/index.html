@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>販賣機小幫手</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- common -->
+    <link rel="icon" type="image/png" href="https://food.roga.tw/static/vending-machine.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="https://food.roga.tw/static/vending-machine.png" sizes="16x16">
+
+    <!-- Apple -->
+    <link rel="apple-touch-icon" href="https://food.roga.tw/static/vending-machine.png" sizes="180x180">
+
+    <!-- Android -->
+    <link rel="icon" type="image/png" sizes="192x192" href="https://food.roga.tw/static/vending-machine.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="https://food.roga.tw/static/vending-machine.png">
+
+    <style>
+
+        body { padding: 10px; }
+        a, a:visited { color: #0f3966;}
+        h1 { margin-bottom: 40px; }
+        .logo { height: 2em; vertical-align: middle; }
+        video { width: 100%; max-width: 480px; border-radius: 8px; }
+        canvas { display: none; }
+        #result { display: none; }
+        #regDisplay {
+            flex: 1;
+            padding: 10px 16px;
+            background: white;
+            border-radius: 8px;
+            word-wrap: break-word;
+            font-size: 1rem;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            min-height: 44px;
+        }
+        strong { color: darkred; }
+        #messageBox {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            min-width: 300px;
+            max-width: 90%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+<div id="messageBox" class="alert alert-warning d-none" role="alert"></div>
+
+<div class="container py-4">
+    <div class="mb-4">
+        <h1 class="d-flex align-items-center">
+            <img src="https://food.roga.tw/static/vending-machine.png?v=202504" alt="販賣機圖示" class="logo">
+            販賣機小幫手
+        </h1>
+        <div id="instruction" class="text-muted">
+            <h5 class="mb-1">使用說明</h5>
+            <ol class="mb-0">
+                <li>在販賣機選擇品項</li>
+                <li>按下「掃描 QR Code」按鈕，並掃描販賣機上的 QR Code </li>
+                <li>掃描成功後，畫面會顯示應付點數</li>
+                <li>按下「購買」按鈕</li>
+            </ol>
+        </div>
+    </div>
+
+    <div id="registration" class="mb-3">
+        <input type="text" id="regCodeInput" class="form-control mb-2" placeholder="請輸入你的零食序號">
+        <button id="saveReg" class="btn btn-primary w-100">儲存</button>
+    </div>
+
+    <div id="regWrapper" class="d-none mb-3 d-flex gap-2">
+        <div id="regDisplay" class="form-control bg-white">零食序號：-</div>
+        <button id="clearReg" class="btn btn-secondary">重設</button>
+    </div>
+
+    <div id="balanceDisplay" class="alert alert-info d-none">
+        餘額：<span id="balanceValue">載入中...</span> 點
+    </div>
+
+    <div id="result" class="alert alert-secondary">尚未掃描</div>
+
+    <div id="actionButtons" class="mb-2 d-flex gap-2 d-none">
+        <button id="startScan" class="btn btn-success flex-fill">掃描 QR Code</button>
+    </div>
+
+    <footer class="text-center text-muted small py-3">
+        © 2025 <a href="https://github.com/roga/awkward-vending-machine-helper" target="_blank">販賣機小幫手</a> | <a target="_blank" href="https://icons8.com/icon/yZxxj4B4-AgO/line">LINE</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
+    </footer>
+</div>
+
+<div id="cameraLayer" class="position-fixed top-0 start-0 w-100 h-100 bg-black bg-opacity-75 d-none" style="z-index: 1050;">
+    <div class="d-flex flex-column justify-content-center align-items-center h-100 w-100">
+        <video id="video" autoplay playsinline style="max-width: 480px; width: 90%; border-radius: 8px;"></video>
+        <button id="cancelScan" class="btn btn-outline-light mt-3">取消掃描</button>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
+<script>
+    let currentVid = null;
+    let currentPrice = null;
+    let scanning = true;
+    let stream = null;
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    function showMessage(text, type = 'warning', duration = 6666) {
+      $('#messageBox')
+        .removeClass()
+        .addClass(`alert alert-${type}`)
+        .text(text)
+        .removeClass('d-none');
+      setTimeout(() => $('#messageBox').addClass('d-none'), duration);
+    }
+
+    function updateRegDisplay() {
+      const code = localStorage.getItem('snack_code');
+      if (code) {
+        const masked = code.length <= 2 ? code : code[0] + '*'.repeat(code.length - 2) + code[code.length - 1];
+        $('#regDisplay').text(`零食序號：${masked}`);
+        $('#regWrapper').removeClass('d-none');
+      } else {
+        $('#regWrapper').addClass('d-none');
+      }
+    }
+
+    function loadAndDisplayBalance(code) {
+      $.getJSON(`https://food.roga.tw/balance?code=${encodeURIComponent(code)}`)
+        .done(data => {
+          $('#balanceValue').text(data.balance ?? '查詢失敗');
+          $('#balanceDisplay').removeClass('d-none');
+        })
+        .fail(err => {
+          $('#balanceValue').text('錯誤');
+          $('#balanceDisplay').removeClass('d-none');
+          console.error('查詢餘額失敗:', err);
+        });
+    }
+
+    function startCamera() {
+      scanning = true;
+      $('#result').text("尚未掃描").hide();
+      $('#cameraLayer').removeClass('d-none');
+
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+        .then(s => {
+          stream = s;
+          $('#video')[0].srcObject = stream;
+          $('#video')[0].play();
+          requestAnimationFrame(scanLoop);
+        })
+        .catch(() => showMessage('⚠️ 無法啟用相機', 'warning'));
+    }
+
+    function stopCamera() {
+      scanning = false;
+      if (stream) stream.getTracks().forEach(track => track.stop());
+      $('#video')[0].srcObject = null;
+      $('#cameraLayer').addClass('d-none');
+    }
+
+    function scanLoop() {
+      if (!scanning) return;
+
+      if ($('#video')[0].readyState === $('#video')[0].HAVE_ENOUGH_DATA) {
+        canvas.width = $('#video')[0].videoWidth;
+        canvas.height = $('#video')[0].videoHeight;
+        ctx.drawImage($('#video')[0], 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+
+        if (code) {
+          const qrData = code.data;
+          const match = qrData.match(/^https:\/\/pay\.yallvend\.com\/machineid\/(.+)$/);
+          if (match) {
+            currentVid = match[1];
+            $.getJSON(`https://food.roga.tw/price?vid=${encodeURIComponent(currentVid)}`)
+              .done(data => {
+                currentPrice = data.price;
+                $('#result').html(`販賣機：<small>${currentVid}</small><br>價格：<strong>${currentPrice}</strong> 點`).show();
+              })
+              .fail(() => {
+                $('#result').html(`販賣機：${currentVid}<br>⚠️ 查詢價格失敗`).show();
+              });
+          } else {
+            $('#result').text(`⚠️ 無法辨識的 QR Code：${qrData}`).show();
+          }
+
+          stopCamera();
+          $('#startScan').text('重新掃描');
+
+          if (!$('#buyButton').length) {
+            const buyBtn = $('<button id="buyButton" class="btn btn-warning flex-fill">購買</button>');
+            buyBtn.on('click', () => {
+              const snackCode = localStorage.getItem('snack_code');
+              if (!snackCode || !currentVid || !currentPrice) {
+                showMessage('⚠️ 請確認資料完整後再購買', 'danger');
+                return;
+              }
+
+              $.ajax({
+                url: 'https://food.roga.tw/pay',
+                method: 'POST',
+                data: {
+                  vid: currentVid,
+                  code: snackCode,
+                  price: currentPrice
+                }
+              })
+              .done(() => {
+                showMessage('✅ 購買成功！', 'success');
+                $('#result').text('尚未掃描').hide();
+                $('#startScan').text('掃描 QR Code');
+                $('#buyButton').remove();
+              })
+              .fail(() => showMessage('❌ 購買失敗', 'danger'));
+            });
+            $('#actionButtons').append(buyBtn);
+          }
+          return;
+        }
+      }
+      requestAnimationFrame(scanLoop);
+    }
+
+    $(function () {
+      $('#saveReg').on('click', () => {
+        const code = $('#regCodeInput').val().trim();
+        if (code) {
+          localStorage.setItem('snack_code', code);
+          $('#registration').addClass('d-none');
+          updateRegDisplay();
+          loadAndDisplayBalance(code);
+          $('#actionButtons').removeClass('d-none');
+        } else {
+          showMessage('⚠️ 請輸入有效的零食序號', 'warning');
+        }
+      });
+
+      $('#clearReg').on('click', () => {
+        localStorage.removeItem('snack_code');
+        location.reload();
+      });
+
+      $('#startScan').on('click', () => {
+        $('#buyButton').remove();
+        startCamera();
+      });
+
+      $('#cancelScan').on('click', () => {
+        stopCamera();
+      });
+
+      const code = localStorage.getItem('snack_code');
+      if (code) {
+        $('#registration').addClass('d-none');
+        updateRegDisplay();
+        loadAndDisplayBalance(code);
+        $('#actionButtons').removeClass('d-none');
+      } else {
+        updateRegDisplay();
+        $('#actionButtons').addClass('d-none');
+      }
+    });
+</script>
+
+</body>
+</html>
