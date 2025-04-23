@@ -49,6 +49,14 @@
             max-width: 90%;
             text-align: center;
         }
+        @keyframes blink {
+            0%   { opacity: 1; }
+            50%  { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+        .blinking {
+            animation: blink 1s infinite;
+        }
     </style>
 </head>
 <body class="bg-light">
@@ -136,16 +144,21 @@
     }
 
     function loadAndDisplayBalance(code) {
-      $.getJSON(`https://food.roga.tw/balance?code=${encodeURIComponent(code)}`)
-        .done(data => {
-          $('#balanceValue').text(data.balance ?? '查詢失敗');
-          $('#balanceDisplay').removeClass('d-none');
-        })
-        .fail(err => {
-          $('#balanceValue').text('錯誤');
-          $('#balanceDisplay').removeClass('d-none');
-          console.error('查詢餘額失敗:', err);
-        });
+        $('#balanceValue').text('更新中⋯').addClass('blinking');
+        $('#balanceDisplay').removeClass('d-none');
+
+        $.getJSON(`https://food.roga.tw/balance?code=${encodeURIComponent(code)}`)
+            .done(data => {
+                $('#balanceValue')
+                    .removeClass('blinking')
+                    .text(data.balance ?? '查詢失敗');
+            })
+            .fail(err => {
+                $('#balanceValue')
+                    .removeClass('blinking')
+                    .text('錯誤');
+                console.error('查詢餘額失敗:', err);
+            });
     }
 
     function startCamera() {
