@@ -209,22 +209,31 @@
                 return;
               }
 
+              const $btn = $('#buyButton');
+                // 購買中
+              $btn.prop('disabled', true).text('購買中...');
+
               $.ajax({
-                url: 'https://food.roga.tw/pay',
-                method: 'POST',
-                data: {
-                  vid: currentVid,
-                  code: snackCode,
-                  price: currentPrice
-                }
+                  url: 'https://food.roga.tw/pay',
+                  method: 'POST',
+                  data: {
+                      vid: currentVid,
+                      code: snackCode,
+                      price: currentPrice
+                  }
               })
               .done(() => {
-                showMessage('✅ 購買成功！', 'success');
-                $('#result').text('尚未掃描').hide();
-                $('#startScan').text('掃描 QR Code');
-                $('#buyButton').remove();
+                  showMessage('✅ 購買成功！', 'success');
+                  $('#result').text('尚未掃描').hide();
+                  $('#startScan').text('掃描 QR Code');
+                  $btn.remove();
+                  // 重新整理餘額
+                  loadAndDisplayBalance(snackCode);
               })
-              .fail(() => showMessage('❌ 購買失敗', 'danger'));
+              .fail(() => {
+                  showMessage('❌ 購買失敗', 'danger');
+                  $btn.prop('disabled', false).text('購買'); // 回復按鈕狀態
+              });
             });
             $('#actionButtons').append(buyBtn);
           }
