@@ -91,7 +91,7 @@
     </div>
 
     <div id="balanceDisplay" class="alert alert-info d-none">
-        餘額：<span id="balanceValue">載入中...</span> 點
+        餘額：<span id="balanceValue">載入中...</span>
     </div>
 
     <div id="result" class="alert alert-secondary">尚未掃描</div>
@@ -144,14 +144,15 @@
     }
 
     function loadAndDisplayBalance(code) {
-        $('#balanceValue').text('更新中⋯').addClass('blinking');
+        $('#balanceValue').text('載入中...').addClass('blinking');
         $('#balanceDisplay').removeClass('d-none');
 
         $.getJSON(`https://food.roga.tw/balance?code=${encodeURIComponent(code)}`)
             .done(data => {
                 $('#balanceValue')
                     .removeClass('blinking')
-                    .text(data.balance ?? '查詢失敗');
+                    .text(typeof data.balance === 'number' ? `${data.balance} 點` : '查詢失敗'
+                    );
             })
             .fail(err => {
                 $('#balanceValue')
