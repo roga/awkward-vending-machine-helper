@@ -57,6 +57,22 @@
         .blinking {
             animation: blink 1s infinite;
         }
+        footer {
+            white-space: nowrap;
+            overflow-x: auto;
+        }
+        #openDisclaimer {
+            cursor: pointer;
+            user-select: none;
+        }
+        #disclaimerLayer {
+            background: rgba(0, 0, 0, 0.6);
+        }
+        #disclaimerDialog {
+            width: min(720px, 92vw);
+            max-height: 85vh;
+            overflow: auto;
+        }
     </style>
 </head>
 <body class="bg-light">
@@ -100,9 +116,66 @@
         <button id="startScan" class="btn btn-success flex-fill">掃描 QR Code</button>
     </div>
 
-    <footer class="text-center text-muted small py-3">
-        © 2025 <a href="https://roga.tw" target="_blank">roga</a> | <a target="_blank" href="https://github.com/roga/awkward-vending-machine-helper">source code</a>
-    </footer>
+    <footer class="text-center text-muted small py-3"> &copy; 2025 | 
+		<a target="_blank" href="https://github.com/roga/awkward-vending-machine-helper">販賣機小幫手</a> | 
+		<a id="openDisclaimer" class="text-decoration-underline" href="#">免責聲明</a>
+	</footer> 
+</div>
+
+<div id="disclaimerLayer" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="z-index: 1100;" role="dialog" aria-modal="true" aria-label="免責聲明">
+    <div id="disclaimerDialog" class="position-absolute top-50 start-50 translate-middle bg-white rounded shadow p-3 text-start">
+        <div class="d-flex justify-content-between align-items-start gap-3">
+            <h5 class="mb-0">免責聲明</h5>
+            <button id="closeDisclaimer" type="button" class="btn-close" aria-label="Close"></button>
+        </div>
+        <hr class="my-2">
+
+        <h6 class="mb-2">免責聲明與使用風險告知</h6>
+        <p class="mb-2">
+            本 App 為便利使用者操作販賣機所提供之輔助工具，並非販賣機設備、支付系統、商品供應或其他相關服務之正式營運單位。使用者在使用本 App 前，應詳閱並充分理解以下內容；一旦使用本 App，即視為使用者已了解並同意自行承擔相關風險。
+        </p>
+
+        <h6 class="mt-3 mb-2">一、使用者應自行負責操作行為</h6>
+        <p class="mb-2">
+            本 App 僅依照使用者輸入、掃描或儲存的資訊，協助執行相關操作。使用者應自行確認零食序號、商品編號、價格、餘額及其他交易資訊是否正確。
+        </p>
+        <p class="mb-2">
+            因使用者操作錯誤、輸入錯誤、掃描結果錯誤、重複操作、誤購商品、扣款異常、販賣機故障、網路中斷、第三方系統異常，或其他因使用本 App 所產生之任何結果、損失或爭議，均由使用者自行承擔。
+        </p>
+        <p class="mb-2">
+            本 App 之開發者、管理者及服務提供者，對於使用者透過本 App 所進行的實際操作、購買、支付、扣款或其他行為，不負任何保證、賠償或法律責任。
+        </p>
+
+        <h6 class="mt-3 mb-2">二、零食序號之儲存與保管</h6>
+        <p class="mb-2">
+            為方便使用，本 App 會將使用者輸入的零食序號，以未加密的明文形式儲存在使用者裝置瀏覽器的 <code>localStorage</code> 中。
+        </p>
+        <p class="mb-2">
+            <code>localStorage</code> 內的資料可能因裝置遭他人使用、瀏覽器資料遭讀取、清除瀏覽資料、使用無痕模式、瀏覽器設定變更、裝置重置、系統更新或其他因素而遭查看、修改、遺失或刪除。
+        </p>
+        <p class="mb-2">
+            使用者可以隨時透過本 App 的重設功能，或自行清除瀏覽器網站資料，移除已儲存的零食序號。
+        </p>
+        <p class="mb-2">
+            使用者應自行妥善保管其裝置及零食序號，並自行評估將零食序號儲存在目前裝置上的風險。本 App 之開發者、管理者及服務提供者，不負責保管、備份、復原或保護使用者的零食序號，亦不對零食序號遭他人取得、冒用、修改、刪除或遺失所造成的任何損害負責。
+        </p>
+
+        <h6 class="mt-3 mb-2">三、服務可用性</h6>
+        <p class="mb-2">
+            本 App 不保證服務隨時可正常使用，亦不保證所有資料、價格、餘額、商品狀態或交易結果均即時、完整且正確。
+        </p>
+        <p class="mb-2">
+            本 App 得因系統維護、功能調整、網路異常、第三方服務異常或其他原因，隨時暫停、變更或終止全部或部分功能，而無須事前通知。
+        </p>
+
+        <h6 class="mt-3 mb-2">四、風險承擔</h6>
+        <p class="mb-2">
+            使用者應在充分了解上述風險後，自行決定是否使用本 App。
+        </p>
+        <p class="mb-0">
+            若使用者不同意本免責聲明，或無法接受零食序號以明文形式儲存在 <code>localStorage</code> 的風險，請勿使用本 App，並請立即重設或清除已儲存的零食序號。
+        </p>
+    </div>
 </div>
 
 <div id="cameraLayer" class="position-fixed top-0 start-0 w-100 h-100 bg-black bg-opacity-75 d-none" style="z-index: 1050;">
@@ -257,7 +330,30 @@
       requestAnimationFrame(scanLoop);
     }
 
+    function openDisclaimerLayer() {
+      $('#disclaimerLayer').removeClass('d-none');
+      $('#closeDisclaimer').trigger('focus');
+    }
+
+    function closeDisclaimerLayer() {
+      $('#disclaimerLayer').addClass('d-none');
+    }
+
     $(function () {
+      $('#openDisclaimer').on('click', (e) => {
+        e.preventDefault();
+        openDisclaimerLayer();
+      });
+      $('#closeDisclaimer').on('click', () => closeDisclaimerLayer());
+      $('#disclaimerLayer').on('click', (e) => {
+        if (e.target === e.currentTarget) closeDisclaimerLayer();
+      });
+      $(document).on('keydown', (e) => {
+        if (e.key === 'Escape' && !$('#disclaimerLayer').hasClass('d-none')) {
+          closeDisclaimerLayer();
+        }
+      });
+
       $('#saveReg').on('click', () => {
         const code = $('#regCodeInput').val().trim();
         if (code) {
